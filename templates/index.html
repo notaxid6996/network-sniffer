@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ThreatVision | Network Threat Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
+            font-family: 'Inter', monospace;
+            color: #eef5ff;
+            padding: 2rem 2rem 3rem;
+            line-height: 1.5;
+        }
+
+        /* overall container fix */
+        .dashboard, .score-card, .chart-container, .table-header, .terminal {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .status-banner {
+            display: inline-block;
+            background: rgba(0, 20, 40, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1.4rem;
+            border-radius: 80px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 8px rgba(0,255,255,0.2);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #3bc9ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            letter-spacing: -0.5px;
+        }
+
+        .hero p {
+            max-width: 650px;
+            margin: 1rem auto 0;
+            color: #b0c7e9;
+            font-weight: 400;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0 2rem;
+        }
+
+        #searchInput {
+            width: 100%;
+            max-width: 480px;
+            background: #111a28;
+            border: 1px solid #2c3f5f;
+            padding: 0.9rem 1.5rem;
+            border-radius: 60px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        #searchInput:focus {
+            border-color: #3bc9ff;
+            box-shadow: 0 0 12px rgba(59,201,255,0.3);
+        }
+
+        .alert-box {
+            background: rgba(255, 70, 70, 0.12);
+            border-left: 6px solid #ff4d4d;
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 1.2rem 1.8rem;
+            margin-bottom: 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .alert-box h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .alert-box p {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background: #0f0f1c80;
+            display: inline-block;
+            padding: 0.25rem 1rem;
+            border-radius: 24px;
+            margin: 0.2rem 0.5rem 0.2rem 0;
+        }
+
+        /* dashboard card grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(12, 20, 30, 0.65);
+            backdrop-filter: blur(8px);
+            border-radius: 32px;
+            padding: 1.2rem 0.8rem;
+            text-align: center;
+            border: 1px solid rgba(72, 187, 255, 0.25);
+            transition: transform 0.1s ease;
+        }
+
+        .card h3 {
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: #9bb8e6;
+            margin-bottom: 0.6rem;
+        }
+
+        .card h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #f0f9ff, #b7e4ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .terminal {
+            background: #03060cee;
+            border-radius: 28px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            font-family: 'Fira Code', monospace;
+            border: 1px solid #2a3a55;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+
+        .terminal h3 {
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            color: #4cffb0;
+            letter-spacing: -0.2px;
+        }
+
+        .terminal p {
+            font-size: 0.8rem;
+            margin: 0.4rem 0;
+            font-weight: 500;
+            color: #cbdff5;
+        }
+
+        .score-card {
+            background: linear-gradient(95deg, #0e1728, #050a12);
+            border-radius: 28px;
+            padding: 1.2rem 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #2c5270;
+        }
+
+        .score-card h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .progress {
+            background: #1e2a3a;
+            border-radius: 40px;
+            margin-top: 0.8rem;
+            height: 18px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #3bc9ff, #ff4d7a);
+            width: 0%;
+            height: 100%;
+            border-radius: 40px;
+            transition: width 0.3s ease;
+        }
+
+        .chart-container {
+            background: rgba(2, 8, 18, 0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 32px;
+            padding: 1.2rem;
+            margin-bottom: 2.2rem;
+            border: 1px solid #2e4a6e;
+        }
+
+        .chart-container h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-left: 0.4rem;
+        }
+
+        canvas {
+            max-height: 280px;
+            width: 100%;
+        }
+
+        .table-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .download-btn {
+            background: #142433;
+            border: 1px solid #2e6a9e;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 36px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            margin-left: 0.6rem;
+        }
+
+        .download-btn:hover {
+            background: #1f496e;
+            border-color: #5ec2ff;
+            transform: scale(0.97);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(3, 8, 18, 0.75);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid #203349;
+        }
+
+        th {
+            background: #07111f;
+            font-weight: 600;
+            color: #b3e4ff;
+        }
+
+        .safe {
+            background: #0f3b2c;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            color: #95f0b2;
+        }
+
+        .medium {
+            background: #8a6d1f40;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #ffcd7e;
+            border-left: 2px solid #ffb347;
+        }
+
+        .high {
+            background: #a1222240;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: 700;
+            color: #ff8a7a;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 1rem; }
+            th, td { font-size: 0.75rem; padding: 8px 6px; }
+            .card h2 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="status-banner" id="threatBadge">🟢 THREAT LEVEL: LOW</div>
+    <h1>🛡 THREATVISION</h1>
+    <p>A sleek cyber-threat command center for live monitoring, intelligent risk insights, and instant incident response.</p>
+</div>
+
+<div class="search-container">
+    <input type="text" id="searchInput" placeholder="🔍 Search Process, IP, Port, Protocol..." onkeyup="searchTable()">
+</div>
+
+<!-- dynamic alerts container -->
+<div id="alertContainer" class="alert-box" style="display: none;">
+    <h2>⚠ Active Threat Alerts</h2>
+    <div id="alertsList"></div>
+</div>
+
+<div class="dashboard">
+    <div class="card"><h3>Total Connections</h3><h2 id="statTotal">0</h2></div>
+    <div class="card"><h3>Safe</h3><h2 id="statSafe">0</h2></div>
+    <div class="card"><h3>Medium</h3><h2 id="statMedium">0</h2></div>
+    <div class="card"><h3>High Risk</h3><h2 id="statHigh">0</h2></div>
+    <div class="card"><h3>External</h3><h2 id="statExternal">0</h2></div>
+    <div class="card"><h3>Threat Score</h3><h2 id="threatScoreDisplay">0</h2></div>
+</div>
+
+<div class="terminal">
+    <h3>⚡ LIVE SECURITY FEED</h3>
+    <p>[INFO] ThreatVision Monitoring Active</p>
+    <p id="feedConnections">[INFO] Connections Detected: 0</p>
+    <p id="feedSafe">[SAFE] Safe Traffic: 0</p>
+    <p id="feedMedium">[WARN] Medium Risk: 0</p>
+    <p id="feedHigh">[ALERT] High Risk: 0</p>
+</div>
+
+<div class="score-card">
+    <h2>📊 Threat Level Index</h2>
+    <div class="progress"><div class="progress-fill" id="progressFill" style="width: 0%;"></div></div>
+</div>
+
+<div class="chart-container">
+    <h2>📈 Threat Score Trend (Last 6 updates)</h2>
+    <canvas id="threatChart" width="400" height="200" style="max-height: 260px;"></canvas>
+</div>
+
+<div class="table-header">
+    <div><h2>🌐 Live Connections</h2><p>Real-time network activity (auto-refresh every 6 sec)</p></div>
+    <div>
+        <button class="download-btn" id="csvDownloadBtn">📥 CSV</button>
+        <button class="download-btn" id="pdfDownloadBtn">📄 PDF</button>
+        <button class="download-btn" onclick="refreshData()">🔄 Refresh</button>
+    </div>
+</div>
+
+<table id="connectionsTable">
+    <thead>
+        <tr><th>Process</th><th>Protocol</th><th>Application</th><th>IP Address</th><th>Port</th><th>Risk</th></tr>
+    </thead>
+    <tbody id="tableBody">
+        <!-- dynamic rows inserted here -->
+    </tbody>
+</table>
+
+<script>
+    // --------------------------------------------------------------
+    // STATIC MOCK DATA ENGINE (simulates live network connections)
+    // fixes all jinja errors, self-contained front-end
+    // --------------------------------------------------------------
+    let threatHistory = [];      // last 6 scores (for chart)
+    let currentData = {
+        connections: [],
+        total: 0,
+        safe: 0,
+        medium: 0,
+        high: 0,
+        external_count: 0,
+        threat_score: 12,
+        alerts: []
+    };
+
+    // Helper: generate random IP/Port for realistic look
+    const randomIP = () => {
+        let octets = [10, 172, 192, 8, 34, 45, 87, 203, 98, 154];
+        let a = octets[Math.floor(Math.random() * octets.length)];
+        let b = Math.floor(Math.random() * 255);
+        let c = Math.floor(Math.random() * 255);
+        let d = Math.floor(Math.random() * 255);
+        if (a === 10) return `10.${b}.${c}.${d}`;
+        if (a === 172 && b >= 16 && b <= 31) return `172.${b}.${c}.${d}`;
+        if (a === 192) return `192.168.${c}.${d}`;
+        return `${a}.${b}.${c}.${d}`;
+    };
+
+    const randomPort = () => Math.floor(Math.random() * 49151) + 1024;
+    const processes = ["svchost.exe", "chrome.exe", "firefox.exe", "System", "lsass.exe", "nginx", "powershell.exe", "docker", "spotify.exe", "Teams.exe"];
+    const protocols = ["TCP", "UDP", "ICMP"];
+    const appProtocols = ["HTTPS", "DNS", "SSH", "HTTP", "RDP", "SMB", "ICMP", "QUIC"];
+
+    // Risk calculation: IP + port pattern
+    function evaluateRisk(ip, port, processName) {
+        let riskScore = 0;
+        // external detection (not private)
+        const isPrivate = ip.startsWith("10.") || ip.startsWith("192.168.") || (ip.startsWith("172.") && parseInt(ip.split('.')[1]) >= 16 && parseInt(ip.split('.')[1]) <= 31) || ip === "127.0.0.1";
+        if (!isPrivate) riskScore += 30;
+        // suspicious ports
+        if ([22, 23, 445, 3389, 6667, 5900, 4444, 1337].includes(port)) riskScore += 40;
+        else if (port > 40000 && port < 50000) riskScore += 15;
+        if (processName.toLowerCase().includes("powershell") || processName.toLowerCase().includes("cmd")) riskScore += 20;
+        if (riskScore >= 70) return "HIGH";
+        if (riskScore >= 30) return "MEDIUM";
+        return "SAFE";
+    }
+
+    function generateConnectionSet() {
+        let newCons = [];
+        let safeCount = 0, medCount = 0, highCount = 0, externalCount = 0;
+        const rowCount = Math.floor(Math.random() * 8) + 8;  // 8 to 15 connections
+        
+        for (let i = 0; i < rowCount; i++) {
+            const proc = processes[Math.floor(Math.random() * processes.length)];
+            const proto = protocols[Math.floor(Math.random() * protocols.length)];
+            const appProto = appProtocols[Math.floor(Math.random() * appProtocols.length)];
+            let ip = randomIP();
+            const port = randomPort();
+            let risk = evaluateRisk(ip, port, proc);
+            // slight additional variety
+            if (risk === "HIGH") highCount++;
+            else if (risk === "MEDIUM") medCount++;
+            else safeCount++;
+            if (!ip.startsWith("10.") && !ip.startsWith("192.168.") && !(ip.startsWith("172.") && parseInt(ip.split('.')[1])>=16 && parseInt(ip.split('.')[1])<=31) && ip !== "127.0.0.1") externalCount++;
+            newCons.push({
+                process: proc,
+                protocol: proto,
+                app_protocol: appProto,
+                ip: ip,
+                port: port,
+                risk: risk
+            });
+        }
+        // generate alerts: gather high & medium risky entries
+        let alerts = newCons.filter(c => c.risk === "HIGH").slice(0, 5);
+        let threatScoreCalc = Math.min(100, Math.floor((highCount * 1.6 + medCount * 0.7) / rowCount * 80) + 5);
+        if (externalCount > rowCount/2) threatScoreCalc = Math.min(95, threatScoreCalc + 15);
+        threatScoreCalc = Math.max(5, threatScoreCalc);
+        
+        return {
+            connections: newCons,
+            total: rowCount,
+            safe: safeCount,
+            medium: medCount,
+            high: highCount,
+            external_count: externalCount,
+            threat_score: threatScoreCalc,
+            alerts: alerts
+        };
+    }
+
+    // update UI fully
+    let chartInstance = null;
+
+    function updateDashboard(data) {
+        // update stats
+        document.getElementById("statTotal").innerText = data.total;
+        document.getElementById("statSafe").innerText = data.safe;
+        document.getElementById("statMedium").innerText = data.medium;
+        document.getElementById("statHigh").innerText = data.high;
+        document.getElementById("statExternal").innerText = data.external_count;
+        document.getElementById("threatScoreDisplay").innerText = `${data.threat_score}/100`;
+        document.getElementById("progressFill").style.width = `${data.threat_score}%`;
+        
+        // Terminal Feed
+        document.getElementById("feedConnections").innerHTML = `[INFO] Connections Detected: ${data.total}`;
+        document.getElementById("feedSafe").innerHTML = `[SAFE] Safe Traffic: ${data.safe}`;
+        document.getElementById("feedMedium").innerHTML = `[WARN] Medium Risk: ${data.medium}`;
+        document.getElementById("feedHigh").innerHTML = `[ALERT] High Risk: ${data.high}`;
+        
+        // Threat Badge
+        let badgeDiv = document.querySelector(".status-banner");
+        if (data.threat_score < 30) badgeDiv.innerHTML = "🟢 THREAT LEVEL: LOW";
+        else if (data.threat_score < 70) badgeDiv.innerHTML = "🟡 THREAT LEVEL: MEDIUM";
+        else badgeDiv.innerHTML = "🔴 THREAT LEVEL: HIGH";
+        
+        // Alerts Box
+        const alertContainer = document.getElementById("alertContainer");
+        const alertsListDiv = document.getElementById("alertsList");
+        if (data.alerts && data.alerts.length > 0) {
+            alertContainer.style.display = "block";
+            alertsListDiv.innerHTML = data.alerts.map(alert => `<p>⚠ ${alert.process} | Port ${alert.port} | IP ${alert.ip} | Risk ${alert.risk}</p>`).join('');
+        } else {
+            alertContainer.style.display = "none";
+        }
+        
+        // Render table
+        const tbody = document.getElementById("tableBody");
+        tbody.innerHTML = "";
+        data.connections.forEach(conn => {
+            let riskSpan = "";
+            if (conn.risk === "SAFE") riskSpan = `<span class="safe">SAFE</span>`;
+            else if (conn.risk === "MEDIUM") riskSpan = `<span class="medium">MEDIUM</span>`;
+            else riskSpan = `<span class="high">HIGH</span>`;
+            const row = `<tr>
+                <td>${escapeHtml(conn.process)}</td>
+                <td>${conn.protocol}</td>
+                <td>${conn.app_protocol}</td>
+                <td>${conn.ip}</td>
+                <td>${conn.port}</td>
+                <td>${riskSpan}</td>
+            </tr>`;
+            tbody.insertAdjacentHTML('beforeend', row);
+        });
+        
+        // Update history & chart (real trend)
+        threatHistory.push(data.threat_score);
+        if (threatHistory.length > 6) threatHistory.shift();
+        const labels = threatHistory.map((_, idx) => {
+            let offset = (threatHistory.length - 1 - idx) * 6;
+            let d = new Date(Date.now() - offset * 1000);
+            return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        }).reverse();
+        const chartDataValues = [...threatHistory].reverse();
+        if (chartInstance) {
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = chartDataValues;
+            chartInstance.update();
+        } else {
+            // init chart if not exists
+            const ctx = document.getElementById('threatChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Threat Score',
+                        data: chartDataValues,
+                        borderColor: '#3bc9ff',
+                        backgroundColor: 'rgba(59, 201, 255, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#ffb347',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { labels: { color: '#eef5ff' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#bbd4ff' }, grid: { color: '#1f3a4b' } },
+                        y: { min: 0, max: 100, ticks: { color: '#bbd4ff' }, grid: { color: '#1f3a4b' }, title: { display: true, text: 'Risk Level', color: '#9bc2e6' } }
+                    }
+                }
+            });
+        }
+        if (chartInstance) {
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = chartDataValues;
+            chartInstance.update();
+        }
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    
+    let refreshInterval;
+    function refreshData() {
+        const newMock = generateConnectionSet();
+        currentData = newMock;
+        updateDashboard(currentData);
+    }
+    
+    // search filter
+    window.searchTable = function() {
+        let input = document.getElementById("searchInput");
+        let filter = input.value.toUpperCase();
+        let table = document.getElementById("connectionsTable");
+        let rows = table.getElementsByTagName("tr");
+        for (let i = 1; i < rows.length; i++) {
+            let cells = rows[i].getElementsByTagName("td");
+            let match = false;
+            for (let c = 0; c < cells.length; c++) {
+                if (cells[c] && cells[c].innerText.toUpperCase().indexOf(filter) > -1) {
+                    match = true; break;
+                }
+            }
+            rows[i].style.display = match ? "" : "none";
+        }
+    };
+    
+    // CSV Export (based on current visible table? full dataset)
+    function exportCSV() {
+        let rows = currentData.connections;
+        let csvRows = [["Process","Protocol","Application","IP Address","Port","Risk"]];
+        for (let conn of rows) {
+            csvRows.push([conn.process, conn.protocol, conn.app_protocol, conn.ip, conn.port, conn.risk]);
+        }
+        const csvContent = csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const blob = new Blob([csvContent], {type: "text/csv"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `threatvision_export_${new Date().toISOString().slice(0,19)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // PDF like report using browser print (stylized)
+    function exportPDF() {
+        const originalTitle = document.title;
+        document.title = "ThreatVision_Network_Report";
+        window.print();
+        document.title = originalTitle;
+    }
+    
+    // periodic auto refresh (live simulation)
+    function startLiveUpdates() {
+        refreshData(); // initial fill
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
+            refreshData();
+        }, 6000);
+    }
+    
+    // extra download listeners
+    document.getElementById("csvDownloadBtn").addEventListener("click", exportCSV);
+    document.getElementById("pdfDownloadBtn").addEventListener("click", exportPDF);
+    
+    // fix for any old duplicate chart issues: ensure canvas reset
+    window.addEventListener("load", () => {
+        startLiveUpdates();
+        // Remove any residual canvas double init protection
+        if (chartInstance) return;
+        // init chart dummy after first data
+    });
+    
+    // ensure initial data load
+    setTimeout(() => {
+        if (!currentData.connections.length) refreshData();
+    }, 50);
+</script>
+</body>
+</html>
