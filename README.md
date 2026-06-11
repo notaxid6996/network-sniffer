@@ -195,21 +195,6 @@ http://127.0.0.1:5000
 
 ---
 
-## 👨‍💻 Authors
 
-* Abhishek Soni
-* Nayan Dilliwar
-* Pankaj Yadav
-
-### Guide
-
-**Mr. Govind Singh**
-
-Department of Information Technology
-Shri Shankaracharya Technical Campus
-
----
-
-## 📜 License
 
 This project is developed for academic and educational purposes.
